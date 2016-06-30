@@ -170,7 +170,11 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             
 
 
-
+    def generate_output(self):
+##        for row in sheet.rows:
+##            for cell in row:
+##                print cell.value
+        pass
 
     def closeEvent(self,event=None): #defines the window close event
         result = QtGui.QMessageBox.question(self,
