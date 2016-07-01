@@ -1,12 +1,22 @@
 #!/usr/bin/python
 
 import sys
+import os.path
+import csv
+
 import openpyxl
 
 import xlsTool_ui
               
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+
+def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
+    csv_reader = csv.reader(utf8_data, dialect=dialect, **kwargs)
+    for row in csv_reader:
+        #yield [unicode(cell, 'utf-8') for cell in row]
+        yield [unicode(cell, 'iso-8859-1') for cell in row]
+        
 
 class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
     def __init__(self):
@@ -45,10 +55,14 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         self.connect(self.action_Salir,QtCore.SIGNAL("triggered()"),self.closeEvent)
         
 
-        self.progressBar.setRange(1,100)
-        self.progressBar.setValue(0)
-        self.progressBar.setTextVisible(False)
-
+        self.progressBar.setRange(0,100)
+        self.progressBar.setValue(0.0)
+        self.progressBar.setTextVisible(True)
+        self.progressBar.setVisible(False)
+        
+        #header = self.table.horizontalHeader()
+        #header.setResizeMode(QtGui.QHeaderView.Stretch)
+        
     def open_file(self):
         dlg = QtGui.QFileDialog()
         dlg.setWindowTitle( 'Seleccione archivo' )
@@ -57,8 +71,80 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         
         name = dlg.getOpenFileName(self,'Open File')
         self.le_Archivo.setText(name)
-        if name:
+        if self.is_excel_file(unicode(name)):
             self.read_excel_file(unicode(name))
+        elif self.is_csv_file(unicode(name)):
+            self.read_csv_file(unicode(name))
+        else:
+            print "No valido"
+        self.apply_table_color()
+        self.adjust_row_labels()
+        
+    def apply_table_color(self):
+        if self.table.rowCount()>=2:
+
+            r=0    
+            for c in range(self.table.columnCount()):
+                self.table.item(r,c).setForeground(QtGui.QColor(0,0,255))
+            r=1    
+            for c in range(self.table.columnCount()):
+                self.table.item(r,c).setForeground(QtGui.QColor(255,0,0))
+
+    def adjust_row_labels(self):
+        #self.table.verticalHeader().setVisible(False)
+        print ([ "ORIGINAL", "NUEVO"] + [str(i) for i in range(1,self.table.rowCount()-2)])
+        self.table.setVerticalHeaderLabels( [ "ORIGINAL", "NUEVO"] + [str(i) for i in range(1,self.table.rowCount()-2)] )
+                
+    def is_csv_file(self,name):
+        return (str(os.path.splitext(name)[1]).upper()) in ['.CSV','.TXT']
+
+    def is_excel_file(self,name):
+        return (str(os.path.splitext(name)[1]).upper()) in ['.XLS','.XLSX']
+
+      
+        
+    def read_csv_file(self,file_):
+        self.valid_input_file=False
+        csv_rows=list()
+        maxrows=self.previewrecords
+        if self.cb_SkipFirstRow.isChecked():
+            maxrows+=1
+        with open(file_,'rb') as csvfile:
+            reader = unicode_csv_reader(csvfile)
+            
+            for row in reader:
+                csv_rows.append(row)
+                if len(csv_rows) >= maxrows:
+                    break
+       
+        self.table_max_rows=len(csv_rows)
+            
+        self.table.setRowCount(self.table_max_rows+2 )
+        self.table.setColumnCount(len(csv_rows[0]))           
+        for i,f in enumerate(csv_rows[0]):
+            twi=QtGui.QTableWidgetItem()
+            if self.cb_SkipFirstRow.isChecked():
+                twi.setText(f)
+                
+            else:
+                twi.setText("Columna {}".format(str(i+1)))
+            twi.setFlags(QtCore.Qt.ItemIsEnabled)
+            self.table.setItem(0,i, twi)
+            self.table.setItem(1,i,QtGui.QTableWidgetItem(self.extraField[0]))
+
+        if self.cb_SkipFirstRow.isChecked():
+            csv_rows=csv_rows[1:]
+
+        for r,row in enumerate(csv_rows):
+            for c,f in enumerate(row):
+                twi=QtGui.QTableWidgetItem()
+                twi.setText(unicode(f))
+                twi.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.table.setItem(r+2,c, twi)
+                
+        self.valid_input_file=True   
+        self.table.resizeColumnsToContents()       
+              
 
     def read_excel_file(self,file_):
         self.valid_input_file=False
@@ -69,10 +155,10 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             self.table_max_rows=self.previewrecords
         else:
             self.table_max_rows=activeSheet.max_row
-        print self.table_max_rows,activeSheet.max_column
+        #print self.table_max_rows,activeSheet.max_column
         self.table.setRowCount(self.table_max_rows+2 )
         self.table.setColumnCount(activeSheet.max_column)
-        print activeSheet.max_column
+        #print activeSheet.max_column
         for c in range(1,activeSheet.max_column+1):
             twi=QtGui.QTableWidgetItem()
             if self.cb_SkipFirstRow.isChecked():
@@ -87,6 +173,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             
         self.show_preview_records(activeSheet)
         self.valid_input_file=True
+        self.table.resizeColumnsToContents()  
 
     def show_preview_records(self,activeSheet):
         beginr=1
@@ -98,7 +185,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         for r in range (beginr,endr):
             for c in range(1,activeSheet.max_column+1):
                 twi=QtGui.QTableWidgetItem()
-                twi.setText(str(activeSheet.cell(row=r, column=c).value))
+                twi.setText(unicode(activeSheet.cell(row=r, column=c).value))
                 twi.setFlags(QtCore.Qt.ItemIsEnabled)
                 self.table.setItem(r,c-1, twi)
 
