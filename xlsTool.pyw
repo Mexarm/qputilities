@@ -28,11 +28,11 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         # tupla ( nombre de campo, Es Requerido ? ,(grupo,orden), lista de alias)
         # grupo empieza en cero
         
-        self.targetFields = [ ("CUENTA",        True,(0,1),["CODIGO","CODIGO DE BARRAS","BARCODE","IDQPN"]),
+        self.targetFields = [ ("CUENTA",        True,(0,1),["CODIGO","CODIGO DE BARRAS","BARCODE","IDQPN","CODBAR"]),
                               ("NOMBRE",        True,(1,1),[]),
                               ("NOMBRE 2",      False,(1,2),[]),
                               ("NOMBRE 3",      False,(1,3),[]),
-                              ("CALLE Y NUMERO",True,(2,1),["CALLE"]),
+                              ("CALLE Y NUMERO",True,(2,1),["CALLE","DOMICILIO"]),
                               ("CALLE 2",       False,(2,2),["NUMERO_EXTERIOR"]),
                               ("CALLE 3",       False,(2,3),["NUMERO_INTERIOR"]),
                               ("COLONIA",       True,(3,1),["COL"]) ,
@@ -299,7 +299,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             wb=openpyxl.load_workbook(file_,use_iterators = True, data_only=True)
             #sheets=wb.get_sheet_names()
             ws=wb.active
-
+            row_count=ws.max_row
             workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + "_Salida.xlsx")
             worksheet = workbook.add_worksheet()
 
@@ -313,6 +313,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                 worksheet.write_string  (r, c,     f             )
             r = 1
             firstrow=True
+            self.progressBar.setVisible(True)
             for row in ws.iter_rows():
                 if firstrow and self.cb_SkipFirstRow.isChecked():
                     firstrow=False
@@ -322,19 +323,24 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                 for c,cell in enumerate(trow):
                      worksheet.write_string  (r, c,     cell              )
                 r += 1
+                self.progressBar.setValue((r/float(row_count)) * 100)
 
             workbook.close()
 
     def generate_output_from_csv(self,file_):
         #Lee archivo de entrada y lo escribe en archivo de salida
         #lee xls
+        
         if self.valid_input_file:
+            row_count=0
             with open(file_,'rb') as csvfile:
                 reader = unicode_csv_reader(csvfile)
-            
-                
-            
+                row_count = sum(1 for row in reader)
+            print row_count
 
+            with open(file_,'rb') as csvfile:
+                reader = unicode_csv_reader(csvfile)
+ 
                 workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + "_Salida.xlsx")
                 worksheet = workbook.add_worksheet()
 
@@ -348,7 +354,13 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                     worksheet.write_string  (r, c,     f             )
                 r = 1
                 firstrow=True
+                
+                self.progressBar.setVisible(True)
                 for row in reader:
+                    
+                    
+                    
+                    
                     if firstrow and self.cb_SkipFirstRow.isChecked():
                         firstrow=False
                         continue
@@ -357,6 +369,8 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                     for c,cell in enumerate(trow):
                          worksheet.write_string  (r, c,     cell              )
                     r += 1
+                    
+                    self.progressBar.setValue((r/float(row_count)) * 100)
 
                 workbook.close()
 
