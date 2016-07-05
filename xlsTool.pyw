@@ -5,6 +5,8 @@ import os.path
 import csv
 
 import openpyxl
+import xlsxwriter
+
 
 import xlsTool_ui
               
@@ -23,23 +25,23 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         super(self.__class__, self).__init__()
         self.setupUi(self)
 
-        # tupla ( nombre de campo, Es necesario ? ,(grupo,orden), lista de alias)
+        # tupla ( nombre de campo, Es Requerido ? ,(grupo,orden), lista de alias)
         # grupo empieza en cero
         
-        self.targetFields = [ ("CUENTA",True,(0,1),["CODIGO","CODIGO DE BARRAS","BARCODE","IDQPN"]),
-                              ("NOMBRE",True,(1,1),[]),
-                              ("NOMBRE 2",False,(1,2),[]),
-                              ("NOMBRE 3",False,(1,3),[]),
+        self.targetFields = [ ("CUENTA",        True,(0,1),["CODIGO","CODIGO DE BARRAS","BARCODE","IDQPN"]),
+                              ("NOMBRE",        True,(1,1),[]),
+                              ("NOMBRE 2",      False,(1,2),[]),
+                              ("NOMBRE 3",      False,(1,3),[]),
                               ("CALLE Y NUMERO",True,(2,1),["CALLE"]),
-                              ("CALLE 2",False,(2,2),["NUMERO_EXTERIOR"]),
-                              ("CALLE 3",False,(2,3),["NUMERO_INTERIOR"]),
-                              ("COLONIA",True,(3,1),["COL"]) ,
-                              ("MUNICIPIO",True,(4,1),["POBLACION"]),
-                              ("ESTADO",True,(5,1),["EDO"]),
-                              ("CP",True,(6,1),["CP","CODIGO_POSTAL"]),
-                              ("TELEFONO",False,(7,1),["TEL"]),
-                              ("TEL 2",False,(7,2),[]),
-                              ("TEL 3",False,(7,3),[])]
+                              ("CALLE 2",       False,(2,2),["NUMERO_EXTERIOR"]),
+                              ("CALLE 3",       False,(2,3),["NUMERO_INTERIOR"]),
+                              ("COLONIA",       True,(3,1),["COL"]) ,
+                              ("MUNICIPIO",     True,(4,1),["POBLACION","DELEGACION"]),
+                              ("ESTADO",        True,(5,1),["EDO"]),
+                              ("CP",            True,(6,1),["CP","CODIGO_POSTAL"]),
+                              ("TELEFONO",      False,(7,1),["TEL"]),
+                              ("TEL 2",         False,(7,2),[]),
+                              ("TEL 3",         False,(7,3),[])]
 
         self.extraField = ("-EXTRA-",False,{'alias':[]})
         self.removeTag=   ("-QUITAR-",False,{'alias':[]})
@@ -70,45 +72,26 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
     
     def get_transformation_dict(self):
         tdict=dict()
-
         targetFields_on_output = [unicode(f[0]) for f in sorted(self.targetFields,key=lambda x : x[2]) if f[2][1] == 1 ]
-        
-        
-
         targetFields_dict= dict()
         for f in self.targetFields:
             targetFields_dict[f[0]]=(f[1],f[2])
-
-        
-            
-
-            
-        
         row0=[ unicode(i.text()) if i else '' for i in self.get_table_row(0)  ]
         row1=[ unicode(i.text()) if i else '' for i in self.get_table_row(1)  ]
         extra_fields= [(row0[i],i)  for i,f in enumerate(row1) if f == unicode(self.extraField[0])]
-
-
         test=[]
         for f in row1:
             if f not in [unicode(self.extraField[0]), unicode(self.removeTag[0])]:
                 test.append((f,targetFields_dict[f][1],row1.index(f)))
         test= sorted(test,key= lambda x: x[1])
-
         last=i
         for i,f in enumerate(targetFields_on_output):
             l2= [fld[2] for fld in test if i == fld[1][0]]
             tdict[i]=(f,l2)
             last=i
-
-        
         for f in extra_fields:
             last+=1
             tdict[last]=(f[0],[f[1]])
-            
-            
-                
-        
         return tdict
             
    
@@ -128,8 +111,6 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             print "No valido"
         self.apply_table_color()
         self.adjust_row_labels()
-
-
    
     def apply_table_color(self):
         if self.table.rowCount()>=2:
@@ -249,41 +230,24 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         return row_items
             
     def table_clicked(self,row,col):
-        print "table clicked: {}, {}".format(row,col)
+        #print "table clicked: {}, {}".format(row,col)
 
         if row != 1 :
             return
         if self.trow >= 0:
-              
             self.table.setCellWidget(self.trow, self.tcol, None)
-            
-        
-                
-            
         self.trow = row
         self.tcol = col
         self.comb = QtGui.QComboBox()
-
-        
         field_set=self.get_field_set()
-        
-        
-        
         field_set = set([i[0] for i in self.targetFields])-field_set 
         field_set.add(unicode(self.extraField[0]))
         field_set.add(unicode(self.removeTag[0]))
-        
         i=self.table.item(row,col)
-        
         if unicode(i.text()):
             field_set.add(unicode(i.text()))
-            
-        
         for v in sorted(field_set):
             self.comb.addItem(v)
-        
-
-        
         if i:
             if self.comb.findText(unicode(i.text())):
                 self.comb.setCurrentIndex(self.comb.findText(unicode(i.text())))
@@ -317,15 +281,122 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
     def btn_Genera_Clicked(self):
         
         if self.valid_input_file and self.check_field_mapping():
-            self.generate_output()
+            name=unicode(self.le_Archivo.text())
+            if self.is_excel_file(name):
+                self.generate_output_from_excel(name)
+            elif self.is_csv_file(name):
+                self.generate_output_from_csv(name)
+                    
         else:
             QtGui.QMessageBox.information(self, 'Verifique Parametros',
                                             'Verifique el archivo de entrada o parametros')
             
-    def generate_output(self):
-        print self.get_transformation_dict()
-        
+    def generate_output_from_excel(self,file_):
+        #Lee archivo de entrada y lo escribe en archivo de salida
+        #lee xls
+        if self.valid_input_file:
+            
+            wb=openpyxl.load_workbook(file_,use_iterators = True, data_only=True)
+            #sheets=wb.get_sheet_names()
+            ws=wb.active
 
+            workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + "_Salida.xlsx")
+            worksheet = workbook.add_worksheet()
+
+            tdict= self.get_transformation_dict()
+            
+            header1=[]
+            for i in range(len(tdict)):
+                header1.append(tdict[i][0])
+            r = 0
+            for c,f in enumerate(header1):
+                worksheet.write_string  (r, c,     f             )
+            r = 1
+            firstrow=True
+            for row in ws.iter_rows():
+                if firstrow and self.cb_SkipFirstRow.isChecked():
+                    firstrow=False
+                    continue
+                trow=self.get_transformed_row(tdict,row, lambda x: x.value)
+                
+                for c,cell in enumerate(trow):
+                     worksheet.write_string  (r, c,     cell              )
+                r += 1
+
+            workbook.close()
+
+    def generate_output_from_csv(self,file_):
+        #Lee archivo de entrada y lo escribe en archivo de salida
+        #lee xls
+        if self.valid_input_file:
+            with open(file_,'rb') as csvfile:
+                reader = unicode_csv_reader(csvfile)
+            
+                
+            
+
+                workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + "_Salida.xlsx")
+                worksheet = workbook.add_worksheet()
+
+                tdict= self.get_transformation_dict()
+                
+                header1=[]
+                for i in range(len(tdict)):
+                    header1.append(tdict[i][0])
+                r = 0
+                for c,f in enumerate(header1):
+                    worksheet.write_string  (r, c,     f             )
+                r = 1
+                firstrow=True
+                for row in reader:
+                    if firstrow and self.cb_SkipFirstRow.isChecked():
+                        firstrow=False
+                        continue
+                    trow=self.get_transformed_row(tdict,row, lambda x: x)
+                    
+                    for c,cell in enumerate(trow):
+                         worksheet.write_string  (r, c,     cell              )
+                    r += 1
+
+                workbook.close()
+
+    def reformat_cp(self, cp):
+        fvalue=''
+        
+        if type(cp) is unicode:
+            try:
+                number = int(cp.strip().split()[0])
+            except (ValueError, IndexError):
+                number = None
+            if number:
+                fvalue = str(number).zfill(5)
+            else:
+                fvalue= cp
+            return fvalue
+        if type(cp) is int or type(cp) is long:
+            fvalue = str(cp).zfill(5)
+            return fvalue
+        return cp                
+            
+            
+    def get_transformed_row(self, tdict, row, fn = lambda x : x):
+        trow=[]
+        for i in range(len(tdict)):
+            fvalues=[]
+            for f in tdict[i][1]:
+                if row[f]:
+                    if fn(row[f]):
+                        if tdict[i][0]== 'CP':
+                            fvalues.append(self.reformat_cp(fn(row[f])))
+                        else:
+                            fvalues.append(unicode(fn(row[f])))
+            fvalues = [unicode(v) for v in fvalues]
+            trow.append(" ".join(fvalues))
+        
+        return trow
+    
+            
+            
     def closeEvent(self,event=None): #defines the window close event
         result = QtGui.QMessageBox.question(self,
                                       "Confirmar Salida...",
