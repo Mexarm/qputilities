@@ -35,6 +35,9 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                               ("CALLE Y NUMERO",True,(2,1),["CALLE","DOMICILIO"]),
                               ("CALLE 2",       False,(2,2),["NUMERO_EXTERIOR"]),
                               ("CALLE 3",       False,(2,3),["NUMERO_INTERIOR"]),
+                              ("CALLE 4",       False,(2,3),[]),
+                              ("CALLE 5",       False,(2,3),[]),
+                              ("CALLE 6",       False,(2,3),[]),
                               ("COLONIA",       True,(3,1),["COL"]) ,
                               ("MUNICIPIO",     True,(4,1),["POBLACION","DELEGACION"]),
                               ("ESTADO",        True,(5,1),["EDO"]),
@@ -290,7 +293,20 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         else:
             QtGui.QMessageBox.information(self, 'Verifique Parametros',
                                             'Verifique el archivo de entrada o parametros')
-            
+    def get_suffix(self):
+        suffix1=[]
+        fentrega = self.de_Entrega.date()
+        fecha=''
+        if fentrega > QtCore.QDate(2016,1,1):
+            fecha = unicode(fentrega.toString())
+                            
+        
+        suffixes= [ ('','_'),('OT_',self.le_OT.text()),('PROY_',self.le_Proyecto.text()),('REMESA_',self.le_Remesa.text()),('FECHA_ENTREGA_',fecha),('FMT_EASY','.xlsx')]
+        
+        suffix1=[ s+unicode(t) for s,t in suffixes if unicode(t)]
+        
+        return '_'.join(suffix1)
+        
     def generate_output_from_excel(self,file_):
         #Lee archivo de entrada y lo escribe en archivo de salida
         #lee xls
@@ -300,7 +316,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             #sheets=wb.get_sheet_names()
             ws=wb.active
             row_count=ws.max_row
-            workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + "_Salida.xlsx")
+            workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + self.get_suffix())
             worksheet = workbook.add_worksheet()
 
             tdict= self.get_transformation_dict()
@@ -315,6 +331,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             firstrow=True
             self.progressBar.setVisible(True)
             for row in ws.iter_rows():
+                self.progressBar.setValue((r/float(row_count)) * 100)
                 if firstrow and self.cb_SkipFirstRow.isChecked():
                     firstrow=False
                     continue
@@ -323,10 +340,10 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                 for c,cell in enumerate(trow):
                      worksheet.write_string  (r, c,     cell              )
                 r += 1
-                self.progressBar.setValue((r/float(row_count)) * 100)
+                
 
             workbook.close()
-
+            self.progressBar.setValue((r/float(row_count)) * 100)
     def generate_output_from_csv(self,file_):
         #Lee archivo de entrada y lo escribe en archivo de salida
         #lee xls
@@ -341,7 +358,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             with open(file_,'rb') as csvfile:
                 reader = unicode_csv_reader(csvfile)
  
-                workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + "_Salida.xlsx")
+                workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + self.get_suffix())
                 worksheet = workbook.add_worksheet()
 
                 tdict= self.get_transformation_dict()
@@ -360,7 +377,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                     
                     
                     
-                    
+                    self.progressBar.setValue((r/float(row_count)) * 100)
                     if firstrow and self.cb_SkipFirstRow.isChecked():
                         firstrow=False
                         continue
@@ -370,9 +387,10 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                          worksheet.write_string  (r, c,     cell              )
                     r += 1
                     
-                    self.progressBar.setValue((r/float(row_count)) * 100)
+                    
 
                 workbook.close()
+                self.progressBar.setValue((r/float(row_count)) * 100)
 
     def reformat_cp(self, cp):
         fvalue=''
