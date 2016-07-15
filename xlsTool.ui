@@ -19,23 +19,46 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_entrega">
+        <item row="0" column="2">
+         <widget class="QPushButton" name="btn_Abrir">
           <property name="text">
-           <string>Fecha de Entrega</string>
+           <string>&amp;Abrir</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="QLineEdit" name="le_Proyecto"/>
+        <item row="3" column="1">
+         <widget class="QLineEdit" name="le_Remesa"/>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="le_Archivo"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_OT">
+          <property name="text">
+           <string>OT</string>
+          </property>
+         </widget>
         </item>
         <item row="4" column="1">
          <widget class="QDateEdit" name="de_Entrega"/>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_Archivo">
+        <item row="2" column="1">
+         <widget class="QLineEdit" name="le_Proyecto"/>
+        </item>
+        <item row="6" column="1">
+         <widget class="QCheckBox" name="cb_SkipFirstRow">
           <property name="text">
-           <string>Archivo</string>
+           <string>Primera Linea es Encabezado</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_Remesa">
+          <property name="text">
+           <string>Remesa</string>
           </property>
          </widget>
         </item>
@@ -46,43 +69,34 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_OT">
+        <item row="8" column="0">
+         <widget class="QPushButton" name="btn_ToExtra">
           <property name="text">
-           <string>OT</string>
+           <string>Quitar-&gt;Extra</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
-         <widget class="QLineEdit" name="le_Remesa"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_Remesa">
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_entrega">
           <property name="text">
-           <string>Remesa</string>
+           <string>Fecha de Entrega</string>
           </property>
          </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="btn_Abrir">
-          <property name="text">
-           <string>&amp;Abrir</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="le_Archivo"/>
         </item>
         <item row="1" column="1">
          <widget class="QLineEdit" name="le_OT"/>
         </item>
-        <item row="5" column="1">
-         <widget class="QCheckBox" name="cb_SkipFirstRow">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_Archivo">
           <property name="text">
-           <string>Primera Linea es Encabezado</string>
+           <string>Archivo</string>
           </property>
-          <property name="checked">
-           <bool>true</bool>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QPushButton" name="btn_ToRemove">
+          <property name="text">
+           <string>Extra-&gt;Quitar</string>
           </property>
          </widget>
         </item>
@@ -115,7 +129,7 @@
      <x>0</x>
      <y>0</y>
      <width>515</width>
-     <height>27</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Archivo">
@@ -140,6 +154,19 @@
    </property>
   </action>
  </widget>
+ <tabstops>
+  <tabstop>btn_Abrir</tabstop>
+  <tabstop>le_Archivo</tabstop>
+  <tabstop>le_OT</tabstop>
+  <tabstop>le_Proyecto</tabstop>
+  <tabstop>le_Remesa</tabstop>
+  <tabstop>de_Entrega</tabstop>
+  <tabstop>cb_SkipFirstRow</tabstop>
+  <tabstop>btn_ToRemove</tabstop>
+  <tabstop>btn_ToExtra</tabstop>
+  <tabstop>table</tabstop>
+  <tabstop>btn_generar</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

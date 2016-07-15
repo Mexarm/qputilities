@@ -59,6 +59,8 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
 
         self.connect(self.btn_Abrir,QtCore.SIGNAL("clicked()"),self.open_file)
         self.connect(self.btn_generar,QtCore.SIGNAL("clicked()"),self.btn_Genera_Clicked)
+        self.connect(self.btn_ToRemove,QtCore.SIGNAL("clicked()"),self.btn_ToRemove_Clicked)
+        self.connect(self.btn_ToExtra,QtCore.SIGNAL("clicked()"),self.btn_ToExtra_Clicked)
         self.connect(self.action_Abrir,QtCore.SIGNAL("triggered()"),self.open_file)
         self.connect(self.table,QtCore.SIGNAL("cellClicked(int,int)"),self.table_clicked)
         self.connect(self.action_Salir,QtCore.SIGNAL("triggered()"),self.closeEvent)
@@ -72,6 +74,18 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         #header = self.table.horizontalHeader()
         #header.setResizeMode(QtGui.QHeaderView.Stretch)
         
+    def btn_ToRemove_Clicked(self):
+        row=self.get_table_row(1)
+        for f in row:
+            if f:
+                if unicode(f.text()) == unicode(self.extraField[0]):
+                    f.setText(self.removeTag[0])
+    def btn_ToExtra_Clicked(self):
+        row=self.get_table_row(1)
+        for f in row:
+            if f:
+                if unicode(f.text()) == unicode(self.removeTag[0]):
+                    f.setText(self.extraField[0])
     
     def get_transformation_dict(self):
         tdict=dict()
@@ -111,7 +125,8 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
         elif self.is_csv_file(unicode(name)):
             self.read_csv_file(unicode(name))
         else:
-            print "No valido"
+            QtGui.QMessageBox.information(self, 'Tipo de Archivo No Valido',
+                                            'Archivo no valido, solo se aceptan archivos XLS, XLSX o CSV')
         self.apply_table_color()
         self.adjust_row_labels()
    
@@ -126,8 +141,6 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
                 self.table.item(r,c).setForeground(QtGui.QColor(255,0,0))
 
     def adjust_row_labels(self):
-        #self.table.verticalHeader().setVisible(False)
-        print ([ "ORIGINAL", "NUEVO"] + [str(i) for i in range(1,self.table.rowCount()-2)])
         self.table.setVerticalHeaderLabels( [ "ORIGINAL", "NUEVO"] + [str(i) for i in range(1,self.table.rowCount()-2)] )
                 
     def is_csv_file(self,name):
