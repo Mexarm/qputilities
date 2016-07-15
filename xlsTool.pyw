@@ -316,7 +316,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             #sheets=wb.get_sheet_names()
             ws=wb.active
             row_count=ws.max_row
-            workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + self.get_suffix())
+            workbook = xlsxwriter.Workbook(unicode(os.path.splitext(file_)[0]).upper() + self.get_suffix())
             worksheet = workbook.add_worksheet()
 
             tdict= self.get_transformation_dict()
@@ -358,7 +358,7 @@ class xlsToolApp(QtGui.QMainWindow, xlsTool_ui.Ui_MainWindow):
             with open(file_,'rb') as csvfile:
                 reader = unicode_csv_reader(csvfile)
  
-                workbook = xlsxwriter.Workbook(str(os.path.splitext(file_)[0]).upper() + self.get_suffix())
+                workbook = xlsxwriter.Workbook(unicode(os.path.splitext(file_)[0]).upper() + self.get_suffix())
                 worksheet = workbook.add_worksheet()
 
                 tdict= self.get_transformation_dict()
